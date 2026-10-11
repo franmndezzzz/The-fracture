@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0716">
+<title>The Fracture · Mando</title>
+<style>
+:root{--bg:#0b0716;--pn:#171028;--ol:#05030b;--m:#ff3dc8;--v:#8a5cff;--c:#3de0ff;--y:#ffd84a;--g:#3dffb0;--tx:#efe6ff;--dim:#9b8fc0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:600 14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden;touch-action:none;overscroll-behavior:none}
+body{background:radial-gradient(120% 90% at 50% 120%,#2a0f3d 0%,var(--bg) 60%)}
+#top{position:fixed;left:0;right:0;top:0;height:46px;display:flex;align-items:center;gap:10px;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));z-index:5}
+#pl{font:900 18px system-ui;padding:3px 12px;border-radius:14px;border:2px solid var(--ol);background:var(--m);color:#fff;letter-spacing:.04em}
+#pl.j2{background:var(--y);color:#2a1a00}
+#st{flex:1;color:var(--dim);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#st b{color:var(--g)}
+.tb{border:2px solid #3a2d5c;background:var(--pn);color:var(--tx);border-radius:10px;height:34px;min-width:44px;font:800 14px system-ui;padding:0 10px}
+#pad{position:fixed;inset:46px 0 0 0;display:grid;grid-template-columns:1fr 1fr}
+#joyZ{position:relative;touch-action:none}
+#joyB{position:absolute;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;border:3px solid rgba(255,61,200,.45);background:radial-gradient(circle,rgba(138,92,255,.18),rgba(138,92,255,.05));left:26%;top:58%;pointer-events:none}
+#joyK{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9be6,var(--m));border:3px solid var(--ol);box-shadow:0 0 18px rgba(255,61,200,.6)}
+#joyH{position:absolute;left:0;right:0;bottom:12px;text-align:center;color:var(--dim);font-size:12px;pointer-events:none}
+#btns{position:relative}
+.b{position:absolute;border-radius:50%;border:3px solid var(--ol);color:#fff;font:900 12px system-ui;display:grid;place-items:center;text-align:center;line-height:1.05;padding:4px;box-shadow:0 4px 0 rgba(0,0,0,.45),inset 0 -6px 12px rgba(0,0,0,.25);touch-action:none;overflow:hidden}
+.b small{display:block;font:800 9px system-ui;opacity:.8;margin-top:2px}
+.b.on{transform:translateY(3px) scale(.96);box-shadow:0 1px 0 rgba(0,0,0,.45),0 0 20px currentColor;filter:brightness(1.3)}
+.b.big{font-size:15px}
+.menu .play,.play-only{display:none}
+.playing .play{display:grid}
+.menu .menuo{display:grid}
+.playing .menuo{display:none}
+#rot{position:fixed;inset:0;background:rgba(11,7,22,.92);display:none;place-items:center;text-align:center;z-index:9;padding:30px;font-size:16px;color:var(--dim)}
+#rot b{color:var(--tx);font-size:20px;display:block;margin-bottom:8px}
+@media (orientation:portrait){#rot.on{display:grid}}
+#msg{position:fixed;left:50%;top:54px;transform:translateX(-50%);background:var(--pn);border:2px solid #3a2d5c;border-radius:12px;padding:6px 14px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:6}
+#msg.on{opacity:1}
+</style></head>
+<body class="menu">
+<div id="top"><span id="pl">J1</span><span id="st">Conectando…</span><button class="tb" id="bFs" type="button">⛶</button><button class="tb" id="bPa" type="button" data-k="9">⏸</button></div>
+<div id="pad">
+  <div id="joyZ"><div id="joyB"><div id="joyK"></div></div><div id="joyH">Arrastra en esta mitad para moverte</div></div>
+  <div id="btns"></div>
+</div>
+<div id="msg"></div>
+<div id="rot"><div><b>Gira el móvil</b>Se juega mejor en horizontal.<br><br><button class="tb" id="rotX" type="button">Seguir en vertical</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const Q=new URLSearchParams(location.search),HOST=Q.get('id'),J=Q.get('j')==='2'?2:1;
+const $=id=>document.getElementById(id);
+$('pl').textContent='J'+J;if(J===2)$('pl').classList.add('j2');
+/* botones (índices de mando estándar) */
+const BTN=[
+ {k:2,n:'GOLPE',c:'#ff3d6e',x:62,y:56,s:96,big:1,cls:'play'},
+ {k:1,n:'ESQUIVA',c:'#3de0ff',x:86,y:74,s:74,cls:'play'},
+ {k:0,n:'Hab. 1',c:'#8a5cff',x:40,y:78,s:70,cls:'play',ab:0},
+ {k:3,n:'Hab. 2',c:'#8a5cff',x:40,y:40,s:70,cls:'play',ab:1},
+ {k:5,n:'Hab. 3',c:'#8a5cff',x:62,y:20,s:70,cls:'play',ab:2},
+ {k:7,n:'Hab. 4',c:'#8a5cff',x:86,y:40,s:70,cls:'play',ab:3},
+ {k:4,n:'DEFINITIVA',c:'#ffd84a',x:16,y:20,s:74,cls:'play',ab:4,dark:1},
+ {k:6,n:'Mover',c:'#3dffb0',x:16,y:56,s:58,cls:'play',dark:1},
+ {k:0,n:'ACEPTAR',c:'#3dffb0',x:70,y:62,s:110,big:1,cls:'menuo',dark:1},
+ {k:1,n:'ATRÁS',c:'#ff3d6e',x:34,y:72,s:80,cls:'menuo'},
+ {k:4,n:'◀ Pestaña',c:'#8a5cff',x:22,y:24,s:72,cls:'menuo'},
+ {k:5,n:'Pestaña ▶',c:'#8a5cff',x:72,y:22,s:72,cls:'menuo'}];
+const box=$('btns');
+BTN.forEach((b,i)=>{const e=document.createElement('div');e.className='b '+b.cls+(b.big?' big':'');e.dataset.k=b.k;e.dataset.i=i;
+  e.style.cssText=`left:calc(${b.x}% - ${b.s/2}px);top:calc(${b.y}% - ${b.s/2}px);width:${b.s}px;height:${b.s}px;background:radial-gradient(circle at 35% 30%,${b.c}cc,${b.c});color:${b.dark?'#1a1020':'#fff'}`;
+  e.innerHTML=`<span>${b.n}</span>`;b.el=e;box.appendChild(e)});
+/* estado del mando */
+let ax=0,ay=0,bits=0,dirty=true;
+const down=new Map();/* pointerId -> índice de botón */
+function setBit(k,on){const m=1<<k;const nb=on?bits|m:bits&~m;if(nb!==bits){bits=nb;dirty=true;send()}}
+function refreshBits(){let nb=0;for(const i of down.values())nb|=1<<(+BTN[i].k);document.querySelectorAll('.b').forEach(e=>e.classList.remove('on'));for(const i of down.values())BTN[i].el.classList.add('on');
+  if(nb!==bits){bits=nb;dirty=true;send()}}
+box.addEventListener('pointerdown',e=>{const t=e.target.closest('.b');if(!t)return;e.preventDefault();try{t.setPointerCapture(e.pointerId)}catch(_){}down.set(e.pointerId,+t.dataset.i);refreshBits();wake();if(navigator.vibrate)try{navigator.vibrate(8)}catch(_){}});
+const up=e=>{if(down.has(e.pointerId)){down.delete(e.pointerId);refreshBits()}};
+box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up);box.addEventListener('lostpointercapture',up);
+$('bPa').addEventListener('pointerdown',e=>{e.preventDefault();setBit(9,true);setTimeout(()=>setBit(9,false),120)});
+/* joystick flotante */
+const jz=$('joyZ'),jb=$('joyB'),jk=$('joyK');let jid=null,jx=0,jy=0;const R=62;
+jz.addEventListener('pointerdown',e=>{if(jid!==null)return;e.preventDefault();jid=e.pointerId;try{jz.setPointerCapture(jid)}catch(_){}const r=jz.getBoundingClientRect();jx=e.clientX-r.left;jy=e.clientY-r.top;jb.style.left=jx+'px';jb.style.top=jy+'px';$('joyH').style.opacity=0;wake()});
+jz.addEventListener('pointermove',e=>{if(e.pointerId!==jid)return;const r=jz.getBoundingClientRect();let dx=e.clientX-r.left-jx,dy=e.clientY-r.top-jy;const d=Math.hypot(dx,dy);if(d>R){dx=dx/d*R;dy=dy/d*R}jk.style.transform=`translate(${dx}px,${dy}px)`;ax=+(dx/R).toFixed(2);ay=+(dy/R).toFixed(2);dirty=true});
+const jup=e=>{if(e.pointerId!==jid)return;jid=null;ax=ay=0;dirty=true;jk.style.transform='';send()};
+jz.addEventListener('pointerup',jup);jz.addEventListener('pointercancel',jup);
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('gesturestart',e=>e.preventDefault());
+/* pantalla completa y pantalla encendida */
+$('bFs').addEventListener('click',()=>{const d=document.documentElement;try{if(!document.fullscreenElement)(d.requestFullscreen||d.webkitRequestFullscreen).call(d);else document.exitFullscreen()}catch(e){}try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}});
+let wl=null;async function wake(){if(wl||!('wakeLock' in navigator))return;try{wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>wl=null)}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){wl=null;wake()}});
+$('rot').classList.add('on');$('rotX').addEventListener('click',()=>$('rot').classList.remove('on'));
+function msg(t){const m=$('msg');m.textContent=t;m.classList.add('on');clearTimeout(msg.t);msg.t=setTimeout(()=>m.classList.remove('on'),2500)}
+/* conexión con el juego */
+let peer=null,conn=null,lastSend=0;
+function stTxt(h){$('st').innerHTML=h}
+function send(){if(!conn||!conn.open)return;try{conn.send({t:'p',x:ax,y:ay,b:bits});lastSend=performance.now();dirty=false}catch(e){}}
+setInterval(()=>{const now=performance.now();if(dirty||(ax||ay)&&now-lastSend>60||now-lastSend>400)send()},33);
+function connect(){if(!HOST){stTxt('Falta el código del juego. Vuelve a escanear el QR.');return}
+  if(!peer||peer.destroyed){peer=new Peer({debug:0});peer.on('open',()=>openConn());peer.on('error',e=>{if(e&&e.type==='peer-unavailable')stTxt('No encuentro el juego. ¿Está abierta la ventana del QR?');else stTxt('Problema de conexión: reintentando…');setTimeout(connect,2500)});
+    peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});return}
+  if(peer.open)openConn()}
+function openConn(){if(conn&&conn.open)return;stTxt('Conectando con el juego…');conn=peer.connect(HOST,{reliable:true,serialization:'json',metadata:{j:J}});
+  conn.on('open',()=>{stTxt('<b>● Conectado</b> · Jugador '+J);conn.send({t:'hi',j:J});send();msg('¡Listo! Ya controlas al Jugador '+J)});
+  conn.on('data',d=>{if(!d||d.t!=='st')return;onState(d)});
+  conn.on('close',()=>{stTxt('Desconectado: reintentando…');conn=null;setTimeout(connect,1500)});
+  conn.on('error',()=>{})}
+let lastMode='';
+function onState(d){const mode=d.st==='play'?'playing':'menu';if(mode!==lastMode){document.body.className=mode;lastMode=mode;down.clear();refreshBits()}
+  const ab=d.ab||[];BTN.forEach(b=>{if(b.ab==null)return;const n=ab[b.ab];b.el.style.visibility=b.cls==='play'&&n===null?'hidden':'';if(n)b.el.innerHTML=`<span>${b.ab===4?'DEFINITIVA':'Hab. '+(b.ab+1)}<small>${esc(n)}</small></span>`});
+  if(d.mv)BTN[7].el.innerHTML=`<span>${esc(d.mv)}</span>`;
+  if(d.who)stTxt(`<b>● Conectado</b> · ${esc(d.who)}`)}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+if(window.Peer)connect();else stTxt('No se pudo cargar la conexión. Revisa que el móvil tenga internet y recarga.');
+</script>
+</body></html>
