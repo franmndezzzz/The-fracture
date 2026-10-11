@@ -9371,15 +9371,15 @@ const FXFCS={c:0,m:0,u:0};const FXFC=new Map(),FXLID=new WeakMap();let FXLIDN=0,
 {const o=drawFigAt;drawFigAt=function(x,y,L,op){op=op||{};
   FXFCS.c++;if(FXNOCACHE||!FXON()||!L||L.hero||op.white>0||op.ice||op.rot||(op.sq&&op.sq!==1)||op.flash||L.body==='drone'||L.body==='turret')return o(x,y,L,op);
   const tr=g.getTransform(),s=Math.hypot(tr.a,tr.b);if(!s)return o(x,y,L,op);
-  const sc=op.sc||.17,ps=Math.max(.05,Math.pow(2,Math.round(Math.log2(s*sc)*5)/5)),fd0=op.fd||1,fd=fd0<0?-1:1,fm=Math.max(.15,Math.abs(fd0)),amp=op.amp>.25?1:0;
+  const sc=op.sc||.17,ps=Math.min(4,Math.max(.05,Math.pow(2,Math.round(Math.log2(s*sc)*5)/5))),fd0=op.fd||1,fd=fd0<0?-1:1,fm=Math.max(.15,Math.abs(fd0)),amp=op.amp>.25?1:0;
   const ph=amp>0?Math.floor((((op.run||0)%TAU)+TAU)%TAU/TAU*FXRF):Math.floor(((T+(op.seed||0))*1.2)%4);
   let id=FXLID.get(L);if(!id){id=++FXLIDN;FXLID.set(L,id)}
-  const key=id+'|'+ps+'|'+fd+'|'+ph+'|'+amp+'|'+(op.atk?1:0)+'|'+(op.cast?1:0);let cv=FXFC.get(key);
+  if(!isFinite(ps)||!isFinite(x)||!isFinite(y))return o(x,y,L,op);const key=id+'|'+ps+'|'+fd+'|'+ph+'|'+amp+'|'+(op.atk?1:0)+'|'+(op.cast?1:0);let cv=FXFC.get(key);
   FXFCS.u++;if(!cv){FXFCS.m++;if(FXFC.size>900)FXFC.clear();cv=document.createElement('canvas');cv.width=Math.ceil(300*ps);cv.height=Math.ceil(340*ps);const c=cv.getContext('2d');c.setTransform(ps*fd,0,0,ps,150*ps,310*ps);
     const og=g;g=c;const sv=[FP.run,FP.amp,FP.atk,FP.cast];FP.run=amp>0?(ph+.5)/FXRF*TAU:0;FP.amp=amp;FP.atk=op.atk||0;FP.cast=op.cast||0;
     try{drawFig(c,L,amp>0?ph*.3:ph*.7)}catch(e){}finally{g=og;[FP.run,FP.amp,FP.atk,FP.cast]=sv}FXFC.set(key,cv)}
   g.fillStyle='rgba(0,0,0,.4)';ell(g,x+2,y+2,(op.r||11)+3,(op.r||11)*.6+2);
-  up(x,y-(op.lift||0),()=>{if(op.alpha!=null)g.globalAlpha*=op.alpha;if(fm<.999)g.scale(fm,1);g.drawImage(cv,-150*sc,-310*sc,cv.width/ps*sc,cv.height/ps*sc)})}}
+  up(x,y-(op.lift||0),()=>{if(op.alpha!=null)g.globalAlpha*=op.alpha;if(fm<.999)g.scale(fm,1);if(cv.width&&cv.height)g.drawImage(cv,-150*sc,-310*sc,cv.width/ps*sc,cv.height/ps*sc)})}}
 /* al cambiar de calidad o de zoom se vacía la caché */
 {const o=resetCommon;resetCommon=function(){o();FXFC.clear()}}
 
@@ -9426,7 +9426,7 @@ function fxDiffUI(){const n=FXDIFF[S.fxDiff].n;if($('bDiff'))$('bDiff').textCont
 {const o=toTitle;toTitle=function(){o();const s=$('bStoryS');if(!s||S.fxNew)return;const c=S.fxc;s.textContent=c&&!c.done?`capítulo 1 · misión ${Math.min(6,(c.mi||0)+1)} de 6`:'ciudad libre · capítulo 2 pronto'}}
 
 /* ---------- versión en la portada ---------- */
-const FXVER='V29.1';
+const FXVER='V30';
 (function(){const t=$('title');if(!t)return;t.insertAdjacentHTML('beforeend',`<div id="fxVer">The Fracture · ${FXVER}</div>`);
   const st=document.createElement('style');st.textContent=`#fxVer{position:absolute;right:var(--sr,14px);top:calc(var(--st,10px) + 2px);font:600 11px var(--ui);letter-spacing:.08em;color:rgba(200,184,255,.55);pointer-events:none;z-index:2}`;document.head.appendChild(st)})();
 
@@ -12527,6 +12527,189 @@ function fxFixName(s){if(typeof s!=='string'||!FXON())return s;const me=fxMyName
 /* ---------- «Muelle aguanta la puerta»: menos enemigos y Muelle aguanta más ---------- */
 /* web pública: el repositorio ahora se llama The-fracture */
 FXWEB='https://franmndezzzz.github.io/The-fracture/';
+
+
+/* =====================================================================================
+   V30 · 4 JEFES NO HUMANOS: EL VISITANTE (alien), LA REINA MANTIS (insecto gigante),
+         EL MIL FORMAS (metamorfo) Y EL GUSANO DE LA GRIETA (bestia). Enormes, con
+         dibujo propio y animado, 3 fases cada uno y ataques nuevos. Salen en el Bucle,
+         en Desafíos (jefes opcionales) y por la ciudad (salen de una grieta).
+   ===================================================================================== */
+const FXMON=['visitante','mantis','milformas','gusano'];
+Object.assign(TEL,{burrow:.5,eggs:.6});
+const fxMonLook=(o,o2,sk)=>({skin:sk||o,out:o,out2:o2,hair:'buzz',hc:o,eye:o2,bare:1,x:[]});
+GB.visitante={n:'El Visitante',hp:2300,r:40,mv:'orbit',d:270,sp:120,moves:['laser','pull','homing','laser'],sum:['er_copia','er_parpadeo'],look:fxMonLook('#9fb3a8','#7dff6a'),
+  t:'…TERRÍCOLA. TU REALIDAD ES UNA COPIA BARATA. NOS LA LLEVAMOS.',fxDraw:'alien',
+  fxPh:{1:{b:'EL VISITANTE'},2:{moves:['laser','pull','spiral','tp','homing'],b:'¡LOS OJOS SE ENCIENDEN!',say:'El Visitante te escanea… y no le gusta lo que ve.'},
+    3:{moves:['decoy','laser','pull','spiral','meteor'],sp:150,b:'¡SE MULTIPLICA!',say:'Se le ha roto un ojo. Ahora llama a sus clones.'}}};
+GB.mantis={n:'La Reina Mantis',hp:2500,r:44,mv:'chase',d:200,sp:125,moves:['slash','cross','slash','jump'],sum:['gr_rastrero','gr_rastrero','gr_rastrero'],look:fxMonLook('#5fae4a','#d4ff3a'),
+  t:'Kssssss… (Te mira como se mira un bocadillo.)',fxDraw:'mantis',
+  fxPh:{1:{b:'LA REINA MANTIS'},2:{moves:['slash','eggs','jump','whip','cross'],b:'¡LA PUESTA!',say:'Pone huevos: lo que salga de ellos tiene hambre.'},
+    3:{moves:['slash','slash','eggs','jump','cross','whip'],sp:155,b:'¡FURIA DE LA REINA!',say:'Le has roto una guadaña… y ahora va el doble de rápida.'}}};
+GB.milformas={n:'El Mil Formas',hp:2400,r:40,mv:'chase',d:220,sp:160,moves:['charge','whip','charge','jump'],sum:['er_copia','er_eco'],look:fxMonLook('#3a1f4a','#ff4fd8'),
+  t:'¿Qué forma prefieres para morir? Te dejo elegir. Es broma: elijo yo.',fxDraw:'meta',
+  fxPh:{1:{b:'EL MIL FORMAS · LOBO',form:'lobo'},2:{mv:'keep',d:220,sp:130,moves:['whip','fan','sonic','spiral'],b:'¡AHORA ES UNA SERPIENTE!',say:'Se retuerce, se estira… y escupe.',form:'serp'},
+    3:{mv:'orbit',d:290,sp:195,moves:['homing','fan','meteor','tp','cross'],b:'¡AHORA ES UN PÁJARO!',say:'Le salen alas. Lanza plumas desde el aire.',form:'ave'}}};
+GB.gusano={n:'El Gusano de la Grieta',hp:2600,r:46,mv:'keep',d:240,sp:70,moves:['burrow','fan','burrow','ring'],sum:['gr_rastrero','gr_escupidor'],look:fxMonLook('#7a5a46','#ff7a3d'),
+  t:'(El suelo tiembla. Luego el suelo abre la boca.)',fxDraw:'worm',fxBurrow:1,
+  fxPh:{1:{b:'EL GUSANO DE LA GRIETA'},2:{moves:['burrow','bounce','summon','burrow','meteor'],b:'¡LLUEVEN ROCAS!',say:'Escupe rocas que rebotan y llama a sus crías.'},
+    3:{moves:['burrow','cross','burrow','meteor','spiral'],sp:90,b:'¡PARTE EL SUELO!',say:'El suelo se agrieta a su paso. No te quedes quieto.'}}};
+for(const k of FXMON)BOSSES[k]=GB[k].n;
+
+/* ---------- fases ---------- */
+{const o=updGen;updGen=function(B,w,dt,bw,dx,dy,d,p2){if(B.def&&B.def.fxPh){if(!B.fxMonPh){B.fxMonPh=1;B.def=Object.assign({},B.def,{look:Object.assign({},B.def.look),fig:null});B.fxForm=(B.def.fxPh[1]||{}).form||null}
+    const f=B.hp/B.max,ph=f>.66?1:f>.33?2:3;
+    if(ph>B.fxMonPh){B.fxMonPh=ph;const s=B.def.fxPh[ph]||{};for(const k of['moves','sum','mv','d','sp'])if(s[k]!=null)B.def[k]=s[k];if(s.form){B.fxForm=s.form;B.fxMorph=.9}
+      banner(s.b||B.def.n,'Fase '+ph+' de 3');if(s.say)toast(s.say);shake=14;flashW=.35;sfx('roar');B.cd=.8;B.tel=null;B.act=null;B.fxBreak=ph;
+      for(let k=0;k<26;k++)parts.push({x:B.x,y:B.y-20,vx:R(-320,320),vy:R(-320,320),l:R(.4,.9),m:.9,c:PK([B.def.look.out2,B.def.look.out,'#ffffff']),r:R(2,6)})}
+    if(B.fxMorph>0)B.fxMorph-=dt;
+    /* gusano en fase 3: el suelo se agrieta a su paso */
+    if(B.kind==='gusano'&&B.fxMonPh===3&&!(B.air>0)){B.fxQ=(B.fxQ??1.5)-w;if(B.fxQ<=0){B.fxQ=R(1.6,2.4);if(typeof fxCrack==='function')fxCrack(B.x,B.y,Math.atan2(P.y-B.y,P.x-B.x)+R(-.4,.4),380,.8)}}}
+  const wasAir=B.air>0;const r=o(B,w,dt,bw,dx,dy,d,p2);
+  /* el gusano sale del suelo: lluvia de rocas alrededor */
+  if(B.def&&B.def.fxBurrow&&wasAir&&!(B.air>0)){const n=6+D.ai*2;for(let i=0;i<n;i++){fire(B.x,B.y,i*TAU/n+R(-.2,.2),240,9,'#b08a6a');const b=ebul[ebul.length-1];if(b&&b.l>0){b.l=1.6;b.rock=1}}
+    for(let k=0;k<30;k++)parts.push({x:B.x+R(-30,30),y:B.y+R(-20,20),vx:R(-260,260),vy:R(-300,100),l:R(.5,1),m:1,c:PK(['#7a5a46','#5a4030','#b08a6a']),r:R(3,8),smoke:k%3===0})}
+  return r}}
+/* ---------- ataques nuevos ---------- */
+{const o=genExec;genExec=function(B,k,a,p2,dx,dy,d){
+  if(k==='burrow'){o(B,'jump',a,p2,dx,dy,d);const T2=1.45-.12*D.ai;B.air=T2;const h=hz[hz.length-1];if(h&&h.k==='circle'){h.det=T2;h.r=92;h.dmg=20;h.fxDig=1}sfx('crash');shake=Math.max(shake,6);return}
+  if(k==='eggs'){const n=3+(p2?1:0)+(D.ai>=2?1:0),pool=B.def.sum||['gr_rastrero'];if(enemies.filter(e=>!e.dead).length<8)for(let i=0;i<n;i++){const p=freePoint(B.x,B.y,60,170),e=mkEnemy(PK(pool),p.x,p.y,'boss');e.spawn=2.4;e.fxEgg=1}
+    sfx('spawn');genDone(B,p2);return}
+  return o(B,k,a,p2,dx,dy,d)}}
+/* huevos que se abren */
+{const o=extraSprites;extraSprites=function(add){o(add);for(const e of enemies){if(!e.fxEgg||!(e.spawn>0)||e.dead)continue;add(e.y,()=>{const k=1-e.spawn/2.4,sh=k>.7?Math.sin(T*40)*2*(k-.7)*3:0;
+    up(e.x+sh,e.y,()=>{g.fillStyle='rgba(0,0,0,.35)';ell(g,0,2,14,5);oell(g,0,-14,12,16,'#e8f0c8',1.8);g.fillStyle='#b8d070';for(let i=0;i<4;i++)ell(g,-5+i*3.5,-20+(i%2)*9,2.2,1.6);
+      if(k>.5){g.strokeStyle='#5a6a30';g.lineWidth=1.4;g.beginPath();g.moveTo(-8,-18);g.lineTo(-3,-13);g.lineTo(1,-19);g.lineTo(6,-12);g.stroke()}
+      g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.25+.25*k;g.drawImage(glowSpr('#d4ff3a'),-18,-34,36,36);g.restore()})})}}}
+
+/* ---------- dibujo ---------- */
+/* los jefes se dibujan como figura de pie (bossSprite): estos cuatro con dibujo propio */
+{const o=bossSprite;bossSprite=function(B){const d=B&&B.def;if(!d||!d.fxDraw)return o(B);
+  const intro=B.intro>0?1-B.intro:1;let al=intro;if(B.fade>0)al*=B.fade/.4;else if(B.appear>0)al*=1-B.appear/.35;
+  if(B.air>0){if(d.fxBurrow){const T0=1.45,p=Math.max(0,1-B.air/T0);g.save();g.fillStyle='rgba(60,40,28,.55)';ell(g,B.jx,B.jy,40+30*p,24+16*p);g.strokeStyle='#ff7a3d';g.globalAlpha=.4+.4*Math.sin(T*24);g.lineWidth=2;
+      for(let i=0;i<6;i++){const an=i/6*TAU+.3;g.beginPath();g.moveTo(B.jx,B.jy);g.lineTo(B.jx+Math.cos(an)*(30+60*p),B.jy+Math.sin(an)*(30+60*p)*.7);g.stroke()}g.restore();
+      if(Math.random()<.5)parts.push({x:B.jx+R(-40,40),y:B.jy+R(-20,20),vx:R(-60,60),vy:R(-120,-20),l:.5,m:.5,c:PK(['#7a5a46','#b08a6a']),r:R(2,5)});return}
+    /* salto: sombra en el suelo y el monstruo en el aire */
+    g.fillStyle='rgba(0,0,0,.35)';ell(g,B.jx,B.jy,B.r*(1.2-B.air*.5),B.r*.6*(1.2-B.air*.5));up(B.x+(B.jx-B.x)*(1-B.air),B.y+(B.jy-B.y)*(1-B.air),()=>{g.globalAlpha*=al;g.translate(0,-160*Math.sin(Math.min(1,B.air)*Math.PI));fxMonDraw(d,B)});return}
+  up(B.x,B.y,()=>{g.globalAlpha*=al;if(intro<1)g.scale(.5+.5*intro,.5+.5*intro);if(B.rage>0)fxGl(0,-50,B.r*5,d.look.out2,B.rage*.6);
+    if(B.tel){const p=1-B.tel.t/(TEL[B.tel.k]||.5);g.strokeStyle=d.look.out2;g.globalAlpha=al*(.4+.4*Math.sin(T*30));g.lineWidth=3;g.beginPath();g.ellipse(0,0,B.r+14+p*10,(B.r+14+p*10)*KT,0,0,TAU);g.stroke();g.globalAlpha=al}
+    fxMonDraw(d,B);if(B.stunT>0)stars(0,-B.r*2.6);
+    if(B.shieldT>0){g.strokeStyle=d.look.out2;g.globalAlpha=al*(.5+.3*Math.sin(T*10));g.lineWidth=3;g.beginPath();g.ellipse(0,-B.r,B.r*1.6,B.r*1.9,0,0,TAU);g.stroke()}})}}
+/* clones del Visitante (señuelos): versión pequeña */
+{const o=enemySprite;enemySprite=function(e){if(e&&e.type==='decoy'&&boss&&boss.def&&boss.def.fxDraw){const d=boss.def;up(e.x,e.y,()=>{g.globalAlpha*=.8;g.scale(.42,.42);fxMonDraw(d,{a:e.a||0,wp:T*3,hp:1,max:1,fxMonPh:1,fxForm:boss.fxForm,r:d.r,decoy:1,flash:e.flash>0?1:0})});return}return o(e)}}
+function fxMonDraw(d,B){const K=(d.r||40)/40*({alien:1.55,mantis:1.9,meta:1.8,worm:1.3}[d.fxDraw]||1.5),fd=Math.cos(B.a||0)>=0?1:-1,ph=B.fxMonPh||1,c=d.look.out,c2=d.look.out2,act=B.act&&B.act.k,tel=B.tel&&B.tel.k;
+  g.scale(K,K);g.lineJoin='round';g.lineCap='round';
+  if(d.fxDraw==='alien')fxDrawAlien(B,fd,ph,c,c2,act,tel);else if(d.fxDraw==='mantis')fxDrawMantis(B,fd,ph,c,c2,act,tel);
+  else if(d.fxDraw==='meta')fxDrawMeta(B,fd,ph,c,c2,act,tel);else fxDrawWorm(B,fd,ph,c,c2,act,tel)}
+const fxGl=(x,y,s,c,a)=>{g.save();g.globalCompositeOperation='lighter';g.globalAlpha=a==null?.6:a;g.drawImage(glowSpr(c),x-s/2,y-s/2,s,s);g.restore()};
+/* --- El Visitante: alien gris que flota, cabeza enorme, tentáculos --- */
+function fxDrawAlien(B,fd,ph,c,c2,act,tel){const fl=-48-Math.sin(T*2)*7;
+  g.fillStyle='rgba(0,0,0,.3)';ell(g,0,0,34,11);
+  if(act==='pull'&&!B.decoy){/* rayo abductor hacia el jugador */const px=(P.x-B.x)/((B.r||40)/40),py=(P.y-B.y)*KT/((B.r||40)/40);g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.22+.1*Math.sin(T*20);
+    const grd=g.createLinearGradient(0,fl-60,px,py);grd.addColorStop(0,c2);grd.addColorStop(1,'rgba(125,255,106,0)');g.fillStyle=grd;g.beginPath();g.moveTo(-14,fl-60);g.lineTo(14,fl-60);g.lineTo(px+40,py);g.lineTo(px-40,py);g.closePath();g.fill();g.restore()}
+  g.save();g.translate(0,fl);
+  /* tentáculos */
+  for(let i=0;i<6;i++){const bx=-22+i*8.8,ph2=T*3+i*1.3;g.strokeStyle=OL;g.lineWidth=9;g.beginPath();g.moveTo(bx,-4);
+    for(let s=1;s<=5;s++){g.lineTo(bx+Math.sin(ph2+s*.8)*(4+s*2.2),-4+s*9)}g.stroke();g.strokeStyle=shade(c,-.15);g.lineWidth=6;g.beginPath();g.moveTo(bx,-4);for(let s=1;s<=5;s++)g.lineTo(bx+Math.sin(ph2+s*.8)*(4+s*2.2),-4+s*9);g.stroke();
+    g.fillStyle=c2;g.globalAlpha=.6;ell(g,bx+Math.sin(ph2+4)*13,36,2.4,2.4);g.globalAlpha=1}
+  /* cuerpo */
+  g.beginPath();g.ellipse(0,-14,20,22,0,0,TAU);fo(g,c,2.2);g.fillStyle=shade(c,-.2);ell(g,0,-6,14,10);
+  g.fillStyle=c2;g.globalAlpha=.55+.3*Math.sin(T*4);ell(g,0,-14,5,5);g.globalAlpha=1;
+  /* brazos finos */
+  const sw=Math.sin(T*2.5)*.3;for(const s of[-1,1]){g.strokeStyle=OL;g.lineWidth=5;g.beginPath();g.moveTo(s*16,-26);g.quadraticCurveTo(s*34,-14+sw*20,s*30,4);g.stroke();g.strokeStyle=c;g.lineWidth=3;g.beginPath();g.moveTo(s*16,-26);g.quadraticCurveTo(s*34,-14+sw*20,s*30,4);g.stroke();
+    for(let f=-1;f<=1;f++){g.strokeStyle=OL;g.lineWidth=2;g.beginPath();g.moveTo(s*30,4);g.lineTo(s*30+f*4,11);g.stroke()}}
+  /* cabeza */
+  g.save();g.translate(0,-62);g.rotate(Math.sin(T*1.3)*.06);g.beginPath();g.ellipse(0,0,36,31,0,0,TAU);fo(g,c,2.6);
+  g.fillStyle=shade(c,.18);ell(g,-10,-12,14,8);g.beginPath();g.moveTo(-6,22);g.quadraticCurveTo(0,40,6,22);g.closePath();fo(g,c,2);
+  if(ph>=2){g.strokeStyle=c2;g.globalAlpha=.55+.3*Math.sin(T*6);g.lineWidth=1.6;for(const s of[-1,1]){g.beginPath();g.moveTo(s*6,-28);g.quadraticCurveTo(s*20,-20,s*16,-6);g.stroke();g.beginPath();g.moveTo(s*12,-26);g.lineTo(s*28,-10);g.stroke()}g.globalAlpha=1}
+  /* ojos */
+  const look=(tel==='laser'||act==='laser')?1:0;for(const s of[-1,1]){g.save();g.translate(s*15+fd*2,4);g.rotate(s*.5);g.beginPath();g.ellipse(0,0,13,7.5,0,0,TAU);g.fillStyle='#07080c';g.fill();g.lineWidth=2;g.strokeStyle=OL;g.stroke();
+    if(ph>=3&&s===1){g.strokeStyle='#ff3d6e';g.lineWidth=1.8;g.beginPath();g.moveTo(-9,-4);g.lineTo(-2,1);g.lineTo(3,-3);g.lineTo(9,3);g.stroke()}
+    else{g.fillStyle='#ffffff';g.globalAlpha=.85;ell(g,-4,-2.5,3,1.8);g.globalAlpha=1;if(look||ph>=2){g.fillStyle=c2;g.globalAlpha=.6+.4*Math.sin(T*18);ell(g,2,1,4,2.4);g.globalAlpha=1}}g.restore()}
+  if(look)fxGl(0,6,70,c2,.5);g.restore();g.restore();
+  if(B.flash>0){g.globalAlpha=.4;g.fillStyle='#fff';ell(g,0,fl-50,36,40);g.globalAlpha=1}}
+/* --- La Reina Mantis --- */
+function fxDrawMantis(B,fd,ph,c,c2,act,tel){const wp=B.wp||0,walk=Math.sin(wp*1.4),dk=shade(c,-.3);g.save();g.scale(fd,1);
+  g.fillStyle='rgba(0,0,0,.32)';ell(g,0,0,52,13);
+  /* patas traseras (4) */
+  for(let i=0;i<4;i++){const bx=-10+i*7,s=i%2?1:-1,lift=Math.max(0,Math.sin(wp*1.4+i*1.6))*7;g.strokeStyle=OL;g.lineWidth=5;g.beginPath();g.moveTo(bx,-30);g.lineTo(bx+s*18-14,-46);g.lineTo(bx+s*24-20,-lift);g.stroke();g.strokeStyle=dk;g.lineWidth=3;g.beginPath();g.moveTo(bx,-30);g.lineTo(bx+s*18-14,-46);g.lineTo(bx+s*24-20,-lift);g.stroke()}
+  /* abdomen */
+  g.save();g.translate(-30,-34);g.rotate(-.35+Math.sin(T*2)*.05);g.beginPath();g.ellipse(0,0,30,16,0,0,TAU);fo(g,c,2.4);g.strokeStyle=dk;g.lineWidth=1.6;for(let i=-2;i<=2;i++){g.beginPath();g.moveTo(i*9,-14);g.quadraticCurveTo(i*9+3,0,i*9,14);g.stroke()}g.restore();
+  /* alas */
+  g.save();g.globalAlpha=.45;g.translate(-12,-52);g.rotate(-.5+(ph>=3?Math.sin(T*30)*.15:0));g.beginPath();g.ellipse(-18,0,32,10,0,0,TAU);g.fillStyle='#d8ffd0';g.fill();g.strokeStyle='#5fae4a';g.lineWidth=1;g.stroke();g.restore();g.globalAlpha=1;
+  /* tórax alargado */
+  g.save();g.translate(4,-56);g.rotate(-.9);g.beginPath();g.ellipse(0,0,24,8,0,0,TAU);fo(g,c,2.2);g.restore();
+  /* guadañas */
+  const sl=act==='slash'?1:tel==='slash'||tel==='cross'?-.6:0;
+  for(const s of[0,1]){if(ph>=3&&s===1){/* guadaña rota */g.save();g.translate(14,-70);g.rotate(.9);g.beginPath();g.moveTo(0,0);g.lineTo(16,-4);g.lineTo(18,4);g.closePath();fo(g,shade(c,.1),1.8);g.restore();continue}
+    g.save();g.translate(14+s*4,-72+s*3);const r1=-.4+sl*1.1+Math.sin(T*3+s)*.08;g.rotate(r1);g.beginPath();g.moveTo(0,-4);g.lineTo(26,-6);g.lineTo(28,4);g.lineTo(0,5);g.closePath();fo(g,c,2);
+    g.translate(26,0);g.rotate(1.9-sl*1.4);g.beginPath();g.moveTo(0,-3);g.quadraticCurveTo(24,-14,40,2);g.lineTo(34,4);g.quadraticCurveTo(20,-4,0,4);g.closePath();fo(g,shade(c,.15),2);
+    g.strokeStyle=c2;g.globalAlpha=.7;g.lineWidth=1.2;g.beginPath();g.moveTo(6,-2);g.quadraticCurveTo(22,-10,36,1);g.stroke();g.globalAlpha=1;g.restore()}
+  /* cabeza triangular */
+  g.save();g.translate(22,-82);g.rotate(Math.sin(T*1.7)*.12);g.beginPath();g.moveTo(-12,-6);g.lineTo(12,-8);g.lineTo(2,12);g.closePath();fo(g,c,2.2);
+  for(const s of[-1,1]){g.beginPath();g.ellipse(s*9,-5,6,7,0,0,TAU);g.fillStyle=c2;g.fill();g.lineWidth=1.6;g.strokeStyle=OL;g.stroke();g.fillStyle='#ffffff';ell(g,s*9-1.5,-7,1.6,1.6)}
+  g.strokeStyle=OL;g.lineWidth=1.4;g.beginPath();g.moveTo(-3,-9);g.quadraticCurveTo(-10,-26,-18,-28);g.moveTo(3,-9);g.quadraticCurveTo(4,-28,14,-32);g.stroke();
+  g.fillStyle=OL;g.beginPath();g.moveTo(-2,10);g.lineTo(2,14);g.lineTo(5,9);g.fill();g.restore();
+  if(ph>=2)fxGl(-30,-34,60,c2,.25+.15*Math.sin(T*5));
+  if(B.flash>0){g.globalAlpha=.4;g.fillStyle='#fff';ell(g,0,-50,46,40);g.globalAlpha=1}g.restore()}
+/* --- El Mil Formas: lobo, serpiente o pájaro (masa viva) --- */
+function fxDrawMeta(B,fd,ph,c,c2,act,tel){const form=B.fxForm||'lobo',wp=B.wp||0;g.save();g.scale(fd,1);g.fillStyle='rgba(0,0,0,.32)';ell(g,0,0,48,12);
+  const goo=(x,y,rx,ry,rot)=>{g.save();g.translate(x,y);g.rotate(rot||0);g.beginPath();const n=14;for(let i=0;i<=n;i++){const a=i/n*TAU,w=1+Math.sin(a*3+T*4)*.06+Math.sin(a*5-T*3)*.04;const px=Math.cos(a)*rx*w,py=Math.sin(a)*ry*w;i?g.lineTo(px,py):g.moveTo(px,py)}g.closePath();fo(g,c,2.2);g.restore()};
+  const eye=(x,y,s)=>{g.fillStyle=c2;ell(g,x,y,3.6*s,2.6*s);g.fillStyle='#fff';ell(g,x+1,y-1,1.1*s,1.1*s);fxGl(x,y,22*s,c2,.5)};
+  if(B.fxMorph>0){const k=B.fxMorph/.9;goo(0,-40,36+20*Math.sin(T*20)*k,30+14*Math.cos(T*17)*k,0);for(let i=0;i<5;i++)eye(Math.cos(T*3+i)*18,-40+Math.sin(T*4+i)*14,1);fxGl(0,-40,120,c2,.5*k);g.restore();return}
+  if(form==='lobo'){const run=Math.sin(wp*1.6);
+    for(const[bx,o2]of[[-24,0],[-12,1.5],[14,3],[26,4.5]]){const sw2=Math.sin(wp*1.6+o2)*10;g.strokeStyle=OL;g.lineWidth=8;g.beginPath();g.moveTo(bx,-30);g.lineTo(bx+sw2,-2);g.stroke();g.strokeStyle=shade(c,-.15);g.lineWidth=5;g.beginPath();g.moveTo(bx,-30);g.lineTo(bx+sw2,-2);g.stroke()}
+    goo(0,-36+run*1.5,36,16,-.05);g.beginPath();g.moveTo(-34,-40);g.quadraticCurveTo(-58,-56+Math.sin(T*6)*6,-62,-34);g.lineWidth=8;g.strokeStyle=OL;g.stroke();g.lineWidth=5;g.strokeStyle=c;g.stroke();
+    g.save();g.translate(34,-48);g.rotate(act==='charge'?.25:-.1);goo(0,0,16,13,0);g.beginPath();g.moveTo(10,-2);g.lineTo(30,4);g.lineTo(10,10);g.closePath();fo(g,c,2);
+    g.fillStyle='#fff';for(let i=0;i<3;i++){g.beginPath();g.moveTo(14+i*5,4);g.lineTo(16+i*5,9);g.lineTo(18+i*5,4);g.fill()}
+    for(const s of[-1,1]){g.beginPath();g.moveTo(-6+s*4,-10);g.lineTo(-2+s*7,-26);g.lineTo(4+s*4,-10);g.closePath();fo(g,c,1.8)}eye(6,-3,1.1);g.restore();
+    for(let i=0;i<5;i++){const x=-30+i*14;g.beginPath();g.moveTo(x,-50);g.lineTo(x+4,-62-Math.sin(T*5+i)*3);g.lineTo(x+8,-50);g.fillStyle=shade(c,.15);g.fill()}}
+  else if(form==='serp'){const n=9;let px=-50,py=-12;const pts=[];for(let i=0;i<n;i++){const t=i/(n-1);pts.push([-50+t*80,-12-t*60+Math.sin(T*3+i*.8)*8*(1-t)])}
+    for(let i=0;i<n;i++){const[x,y]=pts[i];goo(x,y,12+i*1.2,10+i*.9,0)}
+    const[hx,hy]=pts[n-1];g.save();g.translate(hx+8,hy-4);g.rotate(tel?-.3:.1);goo(0,0,20,14,0);const open=act==='whip'||tel==='fan'||tel==='sonic'?1:0;
+    g.beginPath();g.moveTo(10,2);g.lineTo(30,-4-open*8);g.lineTo(30,6+open*8);g.closePath();g.fillStyle='#2a0a24';g.fill();g.strokeStyle=OL;g.lineWidth=1.6;g.stroke();
+    g.fillStyle='#fff';g.beginPath();g.moveTo(14,-2);g.lineTo(16,6);g.lineTo(19,-2);g.fill();g.strokeStyle='#ff3d6e';g.lineWidth=1.6;g.beginPath();g.moveTo(30,1);g.lineTo(40,1+Math.sin(T*20)*3);g.stroke();
+    eye(2,-6,1.2);eye(-8,-4,.8);g.restore();g.fillStyle=shade(c,.2);for(let i=1;i<n-1;i+=2){const[x,y]=pts[i];ell(g,x,y-6,3,2)}}
+  else{/* pájaro */const fl=-70-Math.sin(T*3)*8,flap=Math.sin(T*9);g.translate(0,fl);
+    for(const s of[-1,1]){g.save();g.scale(1,1);g.rotate(s*(.2+flap*.5));g.beginPath();g.moveTo(0,-6);g.quadraticCurveTo(s*-10,-40,s*-70,-30+flap*10);for(let i=0;i<5;i++)g.lineTo(s*(-60+i*10),-18+(i%2)*6+flap*8);g.lineTo(0,6);g.closePath();
+      g.save();g.scale(-1,1);g.restore();fo(g,shade(c,s>0?0:-.15),2);g.restore()}
+    goo(0,0,26,18,0);g.save();g.translate(24,-12);goo(0,0,14,12,0);g.beginPath();g.moveTo(10,-3);g.lineTo(28,2);g.lineTo(10,6);g.closePath();fo(g,'#ffd84a',1.8);eye(4,-3,1.1);g.restore();
+    g.beginPath();g.moveTo(-22,4);g.lineTo(-48,14);g.lineTo(-44,0);g.lineTo(-50,-6);g.lineTo(-22,-4);g.closePath();fo(g,c,2);
+    for(const s of[-1,1]){g.strokeStyle=OL;g.lineWidth=3;g.beginPath();g.moveTo(s*6,16);g.lineTo(s*8,30);g.stroke()}g.translate(0,-fl);g.fillStyle='rgba(0,0,0,.25)';ell(g,0,0,30,8)}
+  if(ph>=2)fxGl(0,-40,90,c2,.15+.1*Math.sin(T*6));
+  if(B.flash>0){g.globalAlpha=.4;g.fillStyle='#fff';ell(g,0,-40,46,34);g.globalAlpha=1}g.restore()}
+/* --- El Gusano de la Grieta --- */
+function fxDrawWorm(B,fd,ph,c,c2,act,tel){const dk=shade(c,-.3);g.save();g.scale(fd,1);
+  g.fillStyle='rgba(30,20,14,.5)';ell(g,-10,2,70,18);
+  g.strokeStyle='#5a4030';g.lineWidth=3;for(let i=0;i<7;i++){const an=i/7*Math.PI+Math.PI;g.beginPath();g.moveTo(-10+Math.cos(an)*50,Math.sin(an)*-12+2);g.lineTo(-10+Math.cos(an)*76,Math.sin(an)*-18+4);g.stroke()}
+  /* cuerpo arqueado que sale del suelo */
+  const sway=Math.sin(T*1.6)*6,open=(tel==='fan'||tel==='ring'||tel==='spiral'||act)?1:.35+.15*Math.sin(T*3),n=8;
+  for(let i=0;i<n;i++){const t=i/(n-1),x=-40+t*60+sway*t,y=-t*96+Math.sin(t*Math.PI)*-10,r=26-t*4;
+    g.beginPath();g.ellipse(x,y,r,r*.9,0,0,TAU);fo(g,i%2?c:shade(c,.08),2.4);g.strokeStyle=dk;g.lineWidth=2;g.beginPath();g.ellipse(x,y,r*.8,r*.25,-.4,0,Math.PI);g.stroke();
+    if(ph>=2&&i%2===0){g.fillStyle=c2;g.globalAlpha=.55+.35*Math.sin(T*5+i);ell(g,x-r*.4,y-r*.2,3,3);ell(g,x+r*.3,y+r*.2,2.4,2.4);g.globalAlpha=1}}
+  /* cabeza: boca redonda con anillos de dientes */
+  g.save();g.translate(20+sway,-100);g.rotate(.5);g.beginPath();g.ellipse(0,0,30,26,0,0,TAU);fo(g,shade(c,.12),2.6);
+  g.beginPath();g.ellipse(6,0,20*open+6,18*open+5,0,0,TAU);g.fillStyle='#200808';g.fill();g.strokeStyle=OL;g.lineWidth=2;g.stroke();fxGl(6,0,50*open+20,c2,.5*open+.2);
+  g.fillStyle='#f4ead0';const R1=20*open+6;for(let i=0;i<12;i++){const a=i/12*TAU+T*.5;const x1=6+Math.cos(a)*R1,y1=Math.sin(a)*R1*.9,x2=6+Math.cos(a)*(R1-7),y2=Math.sin(a)*(R1-7)*.9,a2=a+.18;
+    g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.lineTo(6+Math.cos(a2)*R1,Math.sin(a2)*R1*.9);g.closePath();g.fill()}
+  if(ph>=3){g.strokeStyle=c2;g.lineWidth=1.8;g.beginPath();g.moveTo(-24,-10);g.lineTo(-14,-2);g.lineTo(-20,8);g.stroke()}g.restore();
+  if(B.flash>0){g.globalAlpha=.4;g.fillStyle='#fff';ell(g,0,-60,46,60);g.globalAlpha=1}g.restore()}
+
+/* ---------- Bucle: se mezclan con los jefes de siempre (uno nuevo, uno de antes…) ---------- */
+{const o=startRun;startRun=function(m,diff,boosts){o(m,diff,boosts);if(!FXON()||!RUN||!RUN.bossQ)return;const nw=shuffle(FXMON.slice()),old=RUN.bossQ.filter(k=>!FXMON.includes(k)),q=[];
+  while(nw.length||old.length){if(nw.length)q.push(nw.shift());if(old.length)q.push(old.shift())}RUN.bossQ=q}}
+{const o=mkBoss;mkBoss=function(k,x,y){const B=o(k,x,y);if(B&&FXMON.includes(k)&&mode==='rogue'){B.hp=B.max=RUN&&RUN.arena?1100:950}return B}}
+/* ---------- Desafíos: jefes opcionales ---------- */
+FXOPTB.push(
+ {k:'visitante',n:'El Visitante',d:'Un alien enorme que flota sobre la ciudad. Rayo abductor, láseres de los ojos y clones.',ok:()=>true,lock:'',first:2500,say:[['Nadia','Hay algo encima de la plaza. No sale en el radar. Sale en el cielo.']]},
+ {k:'mantis',n:'La Reina Mantis',d:'Una mantis del tamaño de un autobús. Tajos, saltos y huevos que eclosionan.',ok:()=>true,lock:'',first:2500,say:[['Muelle','¿Eso es un bicho palo? ¡Es un bicho POSTE!']]},
+ {k:'milformas',n:'El Mil Formas',d:'Una masa viva que cambia de forma en cada fase: lobo, serpiente y pájaro.',ok:()=>true,lock:'',first:2500,say:[['Clío','Ha copiado formas de animales que ya no existen. Y algunas que no existieron nunca.']]},
+ {k:'gusano',n:'El Gusano de la Grieta',d:'Se entierra y sale bajo tus pies. Escupe rocas y parte el suelo.',ok:()=>true,lock:'',first:2500,say:[['Faro','El suelo de esa calle respira. Los suelos no respiran.']]});
+/* ---------- Ciudad: de vez en cuando uno sale de una grieta ---------- */
+let FXMONT=R(200,320);
+{const o=update;update=function(dt){o(dt);if(window.FXJ2PH||!FXON()||mode!=='story'||state!=='play')return;if((MSN&&MSN.ph==='run'&&!MSN.def.free)||(typeof FXEV!=='undefined'&&FXEV)||boss)return;
+  FXMONT-=dt;if(FXMONT>0)return;FXMONT=R(480,720);const k=PK(FXMON),b=FXOPTB.find(x=>x.k===k);if(!b)return;
+  banner('¡SE ABRE UNA GRIETA!',b.n+' sale a la calle');shake=12;sfx('roar');if(typeof fxGlitch==='function')fxGlitch(P.x,P.y,.5,2);later(()=>{if(state==='play'&&mode==='story'&&!(MSN&&MSN.ph==='run'&&!MSN.def.free))try{fxOptStart(k)}catch(e){}},1.6)}}
 
 window.FXDBG={ev:()=>FXEV,evNew:fxEvNew,col:()=>fxColGen(),wx:FXWX,demo:()=>FXDEMO,S:()=>S,P:()=>P,fxPower,fxSlots,FXG,startCity,openFx,state:()=>state};
 
