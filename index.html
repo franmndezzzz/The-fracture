@@ -9426,7 +9426,7 @@ function fxDiffUI(){const n=FXDIFF[S.fxDiff].n;if($('bDiff'))$('bDiff').textCont
 {const o=toTitle;toTitle=function(){o();const s=$('bStoryS');if(!s||S.fxNew)return;const c=S.fxc;s.textContent=c&&!c.done?`capítulo 1 · misión ${Math.min(6,(c.mi||0)+1)} de 6`:'ciudad libre · capítulo 2 pronto'}}
 
 /* ---------- versión en la portada ---------- */
-const FXVER='V29';
+const FXVER='V29.1';
 (function(){const t=$('title');if(!t)return;t.insertAdjacentHTML('beforeend',`<div id="fxVer">The Fracture · ${FXVER}</div>`);
   const st=document.createElement('style');st.textContent=`#fxVer{position:absolute;right:var(--sr,14px);top:calc(var(--st,10px) + 2px);font:600 11px var(--ui);letter-spacing:.08em;color:rgba(200,184,255,.55);pointer-events:none;z-index:2}`;document.head.appendChild(st)})();
 
@@ -10765,7 +10765,7 @@ const FXCH4=[
     :[['Brisa','La llave de cristal está en la plataforma. Carrera. Como siempre. Es mi filosofía.']]},{cam:'P',t:.6}],
   post:[{say:[...(S.fxVolt==='colega'?[['VOLT','¡Bien corrido! Toma la llave. En mi universo me la habría quedado, pero allí soy peor persona.']]:S.fxVolt==='rival'?[['VOLT','Hmpf. Has tenido suerte. La próxima vez… bueno, la llave es tuya. Por esta vez.']]:[['Brisa','Toma. La llave. Tiene un siete grabado.']]),
     ['Nadia','La siete. El que se fue a la grieta. Eco.'],['Eco','(Por la radio) Me la quitó al irme. Me alegra que la tengas tú.']]}]}},
- {n:'Muelle aguanta la puerta',num:4,at:'bazar',t:'defend',time:75,obj:'a Muelle',chis:520,types:['ag_agente','ag_supresor','er_bloque','er_copia','md_caballero'],every:2,max:8,cast:{pre:['Muelle','Nadia'],post:['Muelle','Nadia','Brisa']},
+ {n:'Muelle aguanta la puerta',num:4,at:'bazar',t:'defend',time:60,obj:'a Muelle',objHp:170,chis:520,types:['ag_agente','ag_supresor','er_bloque','er_copia'],every:3.1,max:5,cast:{pre:['Muelle','Nadia'],post:['Muelle','Nadia','Brisa']},
   pre:[{cam:'bazar',t:1.4},{say:[['Muelle','Vale. Plan. Yo me quedo en la puerta del bazar rebotando y vosotros… no sé. Defendedme.'],['Nadia','¿Ese es el plan?'],['Muelle','Es el primer plan que he tenido en mi vida. Respetadlo.']]},{cam:'P',t:.6}],
   post:[{say:[['Muelle','Creo que… me he roto un rebote. Me voy a… echar un poquito…'],['Brisa','¿Muelle? ¡Muelle!'],['Nadia','No respira. No…'],
     ['Muelle','…¡Era broma! Bueno, no del todo, me duele todo. Pero quería ver si me echabais de menos. Me habéis echado de menos.'],['Brisa','Te odio. Te odio mucho.'],['Muelle','Yo también os quiero.']]}]},
@@ -12483,6 +12483,50 @@ function fxHudJ2(){const h=$('fxJ2H');if(!h)return;const on=fxCoop()&&['play','p
   box.innerHTML=[['1','1 jugador','Tú solo contra el bucle.'],['2','2 jugadores',`Solo en el Bucle. El J2 lleva una copia de tu héroe con otro color y otros 2 poderes. Controla al J2: ${j2}.`],['m','📱 Conectar móviles',`Usa el móvil como mando.${FXNET.conn[1]||FXNET.conn[2]?' Conectados: '+[1,2].filter(j=>FXNET.conn[j]).map(j=>'J'+j).join(' y ')+'.':''}`]]
     .map(([k,n,d])=>`<button type="button" class="opt${(k==='2'&&FXC.want)||(k==='1'&&!FXC.want)?' sel':''}" data-fp="${k}"><b>${n}</b><span>${d}</span></button>`).join('')}}
 (function(){const st=document.createElement('style');st.textContent='#fxRsPl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px}#fxRsPl .opt{text-align:left}@media (max-width:640px){#fxRsPl{grid-template-columns:1fr}}';document.head.appendChild(st)})();
+
+
+/* =====================================================================================
+   V29.1 · CARRERAS CONTRA VELOCISTAS DE VERDAD, TRAJE DE VOLT = SER VOLT,
+           TU NOMBRE EN VEZ DE «VOLT» Y «MUELLE AGUANTA LA PUERTA» MÁS JUSTA
+   ===================================================================================== */
+/* ---------- carreras: el rival corre a supervelocidad (un 15 % más rápido que antes) ---------- */
+{const o=setupMission;setupMission=function(){const r=o();if(FXON()&&MSN&&MSN.def&&MSN.def.t==='fxcarrera'&&MSN.rv){MSN.rv.spd*=1.15;MSN.rv.hist=[];MSN.rv.ph=0}
+  if(FXON()&&MSN&&MSN.def&&MSN.def.objHp&&MSN.obj){MSN.obj.hp=MSN.obj.max=MSN.def.objHp}return r}}
+{const o=missionTick;missionTick=function(dt){const rv=FXON()&&MSN&&MSN.ph==='run'&&MSN.def&&MSN.def.t==='fxcarrera'?MSN.rv:null;let base=0;
+  /* va a acelerones: sprints y respiros alrededor de su velocidad media */
+  if(rv&&rv.wait<=0){rv.ph=(rv.ph||0)+dt;base=rv.spd;rv.spd=base*(1+.32*Math.sin(rv.ph*1.9)+.12*Math.sin(rv.ph*4.3))}
+  try{o(dt)}finally{if(rv&&base)rv.spd=base}
+  if(rv&&rv.wait<=0&&MSN&&MSN.rv===rv){const p=fxRivalPos(rv),h=rv.hist||(rv.hist=[]);rv.ht=(rv.ht||0)-dt;if(rv.ht<=0){rv.ht=.035;h.unshift({x:p.x,y:p.y,a:p.a});if(h.length>7)h.pop()}
+    const col=MSN.def.rival==='VOLT'?'#ffd84a':MSN.def.rival==='Muelle'?'#ff9a3a':'#7dffb0';
+    for(let k=0;k<2;k++)parts.push({x:p.x+R(-6,6),y:p.y+R(-4,4),vx:-Math.cos(p.a)*R(120,260)+R(-40,40),vy:-Math.sin(p.a)*R(120,260)+R(-40,40),l:.35,m:.35,c:PK([col,'#ffffff','rgba(180,180,200,.6)']),r:R(1.5,3.2),line:k===0})
+    if(Math.random()<dt*6)fx.push({k:'zap',x1:p.x-Math.cos(p.a)*40,y1:p.y-Math.sin(p.a)*40-20,x2:p.x,y2:p.y-24,t:0,c:col})}}}
+{const o=extraSprites;extraSprites=function(add){if(!(FXON()&&MSN&&MSN.ph==='run'&&MSN.def&&MSN.def.t==='fxcarrera'&&MSN.rv)){return o(add)}
+  const rv=MSN.rv,volt=MSN.def.rival==='VOLT'&&typeof VOLTO!=='undefined',L=FXPORT[MSN.def.rival]||FXPORT.Brisa,col=volt?'#ffd84a':MSN.def.rival==='Muelle'?'#ff9a3a':'#7dffb0';
+  /* estela e imágenes residuales detrás del rival */
+  if(rv.wait<=0&&rv.hist&&rv.hist.length>1){const h=rv.hist;add(h[0].y-1,()=>{g.save();g.globalCompositeOperation='lighter';g.strokeStyle=col;g.lineCap='round';
+      for(let i=1;i<h.length;i++){g.globalAlpha=.55*(1-i/h.length);g.lineWidth=14*(1-i/h.length)+2;g.beginPath();g.moveTo(h[i-1].x,h[i-1].y-22);g.lineTo(h[i].x,h[i].y-22);g.stroke()}g.restore()});
+    for(let i=2;i<h.length;i+=2){const q=h[i];add(q.y-.5,()=>{g.save();g.globalAlpha=.28*(1-i/h.length);try{if(volt)drawVoltTop(q.x,q.y,q.a,VOLTO,{still:1,sp:500,run:T*26,ref:rv,sc:1.35});else drawFigAt(q.x,q.y,L,{sc:.158,fd:Math.cos(q.a)>=0?1:-1,run:T*26,amp:1})}catch(e){}g.restore()})}}
+  return o(add)}}
+/* ---------- traje de VOLT: te conviertes en Volt (figura original) y te llaman Volt ---------- */
+const fxIsVolt=()=>!!(S&&S.fx&&S.fx.look&&S.fx.look.fxVolt);
+{const o=fxApplySuit;fxApplySuit=function(id){const r=o(id);try{S.fx.look.fxVolt=id==='volt_traje'?1:0}catch(e){}return r}}
+{const o=drawHero;drawHero=function(c,X,Y,S0,ou,t,power){if(FXON()&&fxIsVolt()&&!(ou&&ou.notFx)&&typeof VOLTO!=='undefined')return o(c,X,Y,S0,VOLTO,t,power);return o(c,X,Y,S0,ou,t,power)}}
+{const o=fxMakeJ2;fxMakeJ2=function(b){o(b);if(FXC.o&&FXC.o.fx&&FXC.o.fx.look)FXC.o.fx.look.fxVolt=0}}
+/* ---------- el nombre: tu héroe (o «Volt» si llevas su traje); nunca el Volt de la otra ciudad por error ---------- */
+function fxMyName(){return fxIsVolt()?'Volt':((S.fx&&S.fx.name)||'Sin nombre')}
+function fxFixName(s){if(typeof s!=='string'||!FXON())return s;const me=fxMyName();
+  if(fxIsVolt()){const n=S.fx&&S.fx.name;if(n&&n!=='Volt'&&n.length>2)s=s.split(n).join('Volt');return s}
+  if(s.indexOf('Volt')<0)return s;return s.replace(/\bVolt\b/g,(m,i,all)=>{const pre=all.slice(Math.max(0,i-14),i);if(/(estelas? de|[Gg]rafitis? de|[Tt]raje de|Adiós,|Corre,)\s*«?$/.test(pre))return m;return me})}
+{const o=toast;toast=function(t){return o(fxFixName(t))}}
+{const o=banner;banner=function(a,b){return o(fxFixName(a),fxFixName(b))}}
+{const o=nextLine;nextLine=function(){o();if(!FXON())return;const w=$('dName');if(w&&(dWho==='Volt'||w.textContent===(S.fx&&S.fx.name)))w.textContent=fxMyName();if(typeof dFull==='string')dFull=fxFixName(dFull)}}
+/* textos de la interfaz que aún decían «Volt» */
+(function(){const fix=n=>{if(!FXON())return;if(n.nodeType===3){const v=n.nodeValue;if(v&&v.indexOf('Volt')>=0&&!fxIsVolt()){const nv=fxFixName(v);if(nv!==v)n.nodeValue=nv}}
+    else if(n.nodeType===1&&n.tagName!=='SCRIPT'&&n.tagName!=='STYLE'&&n.textContent&&n.textContent.indexOf('Volt')>=0){const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT);let x;while((x=w.nextNode()))fix(x)}};
+  try{new MutationObserver(ms=>{for(const m of ms){if(m.type==='characterData')fix(m.target);else for(const n of m.addedNodes)fix(n)}}).observe(document.body,{subtree:true,childList:true,characterData:true});setTimeout(()=>fix(document.body),500)}catch(e){}})();
+/* ---------- «Muelle aguanta la puerta»: menos enemigos y Muelle aguanta más ---------- */
+/* web pública: el repositorio ahora se llama The-fracture */
+FXWEB='https://franmndezzzz.github.io/The-fracture/';
 
 window.FXDBG={ev:()=>FXEV,evNew:fxEvNew,col:()=>fxColGen(),wx:FXWX,demo:()=>FXDEMO,S:()=>S,P:()=>P,fxPower,fxSlots,FXG,startCity,openFx,state:()=>state};
 
