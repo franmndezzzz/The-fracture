@@ -2469,7 +2469,7 @@ function buildSkyline(){skyC=document.createElement('canvas');skyC.width=Math.ma
   const p=document.createElement('canvas');p.width=p.height=8;const pc2=p.getContext('2d');pc2.fillStyle='rgba(255,255,255,.5)';pc2.beginPath();pc2.arc(4,4,1.3,0,TAU);pc2.fill();dotPat=hg.createPattern(p,'repeat')}
 function drawTitle(dt){const c=hg;c.setTransform(DPR,0,0,DPR,0,0);c.globalCompositeOperation='source-over';c.globalAlpha=1;if(skyC)c.drawImage(skyC,0,0,W,H);
   nextBolt-=dt;if(nextBolt<=0){nextBolt=R(4,8);boltSky=.5;const bx=R(W*.5,W*.95);boltPts=[{x:bx,y:0}];let y=0,xx=bx;while(y<H*.55){y+=R(20,50);xx+=R(-30,30);boltPts.push({x:xx,y})}sfx('thunder')}
-  const menuW=Math.min(W*.46,410),hx=menuW+(W-menuW)*.48,fy=H*.84,sc=Math.min(H*.68/270,(W-menuW)*.75/240);
+  const menuW=Math.min(W*.46,410),hx=(typeof fxTitleOff==='function'?fxTitleOff():0)+menuW+(Math.min(W,1180)-menuW)*.57,fy=H*.84,sc=Math.min(H*.68/270,(W-menuW)*.75/240);
   c.save();c.translate(hx,fy-130*sc);c.rotate(T*.05);const tc=trailHex(OUT.trail);for(let i=0;i<20;i++){c.rotate(TAU/20);c.fillStyle=i%2?'rgba(255,255,255,.05)':tc+'22';c.beginPath();c.moveTo(0,0);c.lineTo(Math.max(W,H),-60);c.lineTo(Math.max(W,H),60);c.closePath();c.fill()}c.restore();
   if(dotPat){c.save();c.globalAlpha=.35;c.fillStyle=dotPat;c.beginPath();c.arc(hx,fy-130*sc,170*sc,0,TAU);c.fill();c.restore()}
   if(boltSky>0){boltSky-=dt;c.fillStyle=`rgba(180,200,255,${boltSky*.25})`;c.fillRect(0,0,W,H);c.save();c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,boltSky*3);c.strokeStyle='#bcd8ff';c.lineWidth=3;strokeP(c,boltPts.map(p=>[p.x,p.y]));c.strokeStyle='#ffffff';c.lineWidth=1;strokeP(c,boltPts.map(p=>[p.x,p.y]));c.restore()}
@@ -9426,7 +9426,7 @@ function fxDiffUI(){const n=FXDIFF[S.fxDiff].n;if($('bDiff'))$('bDiff').textCont
 {const o=toTitle;toTitle=function(){o();const s=$('bStoryS');if(!s||S.fxNew)return;const c=S.fxc;s.textContent=c&&!c.done?`capítulo 1 · misión ${Math.min(6,(c.mi||0)+1)} de 6`:'ciudad libre · capítulo 2 pronto'}}
 
 /* ---------- versión en la portada ---------- */
-const FXVER='V30 · Demo';
+const FXVER='V30.1 · Demo';
 (function(){const t=$('title');if(!t)return;t.insertAdjacentHTML('beforeend',`<div id="fxVer">The Fracture · ${FXVER}</div>`);
   const st=document.createElement('style');st.textContent=`#fxVer{position:absolute;right:var(--sr,14px);top:calc(var(--st,10px) + 2px);font:600 11px var(--ui);letter-spacing:.08em;color:rgba(200,184,255,.55);pointer-events:none;z-index:2}`;document.head.appendChild(st)})();
 
@@ -12711,6 +12711,36 @@ let FXMONT=R(200,320);
   FXMONT-=dt;if(FXMONT>0)return;FXMONT=R(480,720);const k=PK(FXMON),b=FXOPTB.find(x=>x.k===k);if(!b)return;
   banner('¡SE ABRE UNA GRIETA!',b.n+' sale a la calle');shake=12;sfx('roar');if(typeof fxGlitch==='function')fxGlitch(P.x,P.y,.5,2);later(()=>{if(state==='play'&&mode==='story'&&!(MSN&&MSN.ph==='run'&&!MSN.def.free))try{fxOptStart(k)}catch(e){}},1.6)}}
 
+
+/* =====================================================================================
+   V30.1 · PORTADA MÁS LIMPIA: dificultad, sonido, pantalla completa, nombre, copia,
+           refrescar y empezar desde 0 pasan a «Ajustes»; menú y héroe más centrados
+   ===================================================================================== */
+(function(){const foot=document.querySelector('#title .tFoot');if(!foot)return;
+  document.body.insertAdjacentHTML('beforeend',`<div id="fxSetP" class="ov" hidden><div class="panel" style="width:min(520px,94vw)"><h2>Ajustes</h2><div id="fxSetG"></div>
+    <div class="row"><button class="btn main" id="fxSetX" type="button">Volver</button></div></div></div>`);
+  const G=$('fxSetG');const lab={bDiff:'🎚️',bSnd:'🔊',fsB:'⛶',bFxName:'✏️',bFxBak:'💾',bRefresh:'🔄',bReset:'⚠️'};
+  for(const id of['bDiff','bSnd','fsB','bFxName','bFxBak','bRefresh','bReset']){const b=$(id);if(b)G.appendChild(b)}
+  foot.insertAdjacentHTML('beforeend','<button id="bFxSet" class="mini" type="button">⚙️ Ajustes</button>');
+  $('bFxSet').addEventListener('click',()=>{sfx('blip');$('fxSetP').hidden=false});
+  $('fxSetX').addEventListener('click',()=>{sfx('blip');$('fxSetP').hidden=true});
+  /* los que abren otra ventana cierran antes los ajustes */
+  $('fxSetP').addEventListener('click',e=>{if(e.target.closest('#bFxBak,#bFxName,#bReset,#bRefresh'))$('fxSetP').hidden=true},true);
+  const st=document.createElement('style');st.textContent=`
+#fxSetG{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 4px}
+#fxSetG .mini{font:700 14px var(--ui);padding:13px 14px;color:#efe6ff;text-align:left;width:100%;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+#fxSetG #bReset{grid-column:1/-1;text-align:center}
+#fxSetG [hidden]{display:none}
+/* portada centrada en pantallas anchas */
+:root{--fxTO:max(0px,calc((100vw - 1180px)/2))}
+.tMenu{width:calc(min(calc(46*var(--vw)),410px) + var(--fxTO))!important;padding-left:calc(var(--sl) + 8px + var(--fxTO))!important}
+.tMenu .tFoot{max-width:400px}
+.tMenu .tFoot b{flex-basis:100%}
+@media (max-width:640px){#fxSetG{grid-template-columns:1fr}}`;document.head.appendChild(st)})();
+if(typeof topLayer==='function'){const o=topLayer;topLayer=function(){const p=$('fxSetP');if(p&&!p.hidden)return p;return o()}}
+if(typeof PADBACK==='object')PADBACK.fxSetP='fxSetX';
+function fxTitleOff(){return Math.max(0,(W-1180)/2)}
+
 window.FXDBG={ev:()=>FXEV,evNew:fxEvNew,col:()=>fxColGen(),wx:FXWX,demo:()=>FXDEMO,S:()=>S,P:()=>P,fxPower,fxSlots,FXG,startCity,openFx,state:()=>state};
 
 
@@ -12763,6 +12793,8 @@ if(typeof PADBACK==='object')PADBACK.fxDemoP='fxDemoX';
 {const o=fxPackOpen;fxPackOpen=function(){fxSoon('Los sobres, la ruleta y la tienda')}}
 fxTestOpen=function(){};
 FXMONT=1e9;
+/* la etiqueta DEMO solo en la portada (en partida tapaba los avisos) */
+setInterval(()=>{const b=$('fxDemoBadge');if(b)b.hidden=!(state==='title'||state==='rsetup'||state==='style')},300);
 
 </script>
 
